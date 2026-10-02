@@ -3,6 +3,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import urllib.request
+import urllib.error
 
 TLE_WRONG_FORMAT_ERROR="所给内容不是TLE参数，应为三行固定宽度文本"
 
@@ -56,7 +57,7 @@ class WebServiceError(Exception):
     pass
 def download_tle(url):
     try:
-        response = urllib.request.urlopen(url,timeout=10)
-        return response.read().decode('utf-8')
+        with urllib.request.urlopen(url,timeout=10) as response:
+            return response.read().decode('utf-8')
     except urllib.error.URLError as e:
         raise WebServiceError("无法从指定URL获取TLE数据") from e

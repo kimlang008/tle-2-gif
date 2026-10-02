@@ -53,9 +53,13 @@ def test_TleFormatError(TLE_format_get):
 
 def test_web_yes(monkeypatch):
     class MockResponse():
+        def __enter__(self):
+            return self
+        def __exit__(self,exc_type,exc_value,tb):
+            return None
         def read(self):
             return SAMPLE_TLE_ISS.encode('utf-8')
-    monkeypatch.setattr("main.urllib.request.urlopen",lambda *args, **kwargs,: MockResponse())
+    monkeypatch.setattr("main.urllib.request.urlopen",lambda *args, **kwargs: MockResponse())
     assert download_tle("https://fakeone.com")==SAMPLE_TLE_ISS
 def test_web_network_error(monkeypatch):
     def FailMockResponse(*args,**kwargs):
