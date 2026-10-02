@@ -67,3 +67,10 @@ def test_web_network_error(monkeypatch):
     monkeypatch.setattr("main.urllib.request.urlopen", FailMockResponse)
     with pytest.raises(WebServiceError):
         download_tle("https://fakeone.com")
+        
+def test_timeout(monkeypatch):
+    def fake_timeout(*args, **kwargs):
+        raise TimeoutError
+    monkeypatch.setattr("main.urllib.request.urlopen",fake_timeout)
+    with pytest.raises(WebServiceError):
+        download_tle("https://fakeone.com")

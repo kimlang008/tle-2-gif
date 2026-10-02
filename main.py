@@ -9,7 +9,8 @@ import numpy as np
 import cartopy.crs as ccrs
 from matplotlib.animation import FuncAnimation,PillowWriter
 from skyfield.api import EarthSatellite, load, wgs84
-
+plt.rcParams["font.sans-serif"] = ["Microsoft YaHei"]
+plt.rcParams["axes.unicode_minus"] = False
 
 TLE_WRONG_FORMAT_ERROR="所给内容不是TLE参数，应为三行固定宽度文本"
 
@@ -23,6 +24,19 @@ class TlePara:
     arg_perigee:float
     mean_anomaly:float
     mean_motion:float
+
+def die(msg):
+    print("错误:"+msg,file=sys.stderr)
+    sys.exit(3)
+
+def build_parser():
+    parser=argparse.ArgumentParser(description="TLE 2 GIF",)
+    parser.add_argument("--debug",action="store_true",help="用debug可调取轨道参数")
+
+    sub=parser.add_subparsers(dest="cmd",metavar="<指令>")
+    p_draw=sub.add_parser("draw", help="输入 draw <含规范格式TLE的网址> 以生成GIF")
+    p_draw.add_argument("url",type=str,help="存有TLE数据的网址")
+    return parser
 
 class TleFormatError(Exception):
     pass
@@ -60,18 +74,17 @@ def extract_tle(tle_str:str)->TlePara:
     except (IndexError, ValueError) as e:
         raise TleFormatError(TLE_WRONG_FORMAT_ERROR)from e
 
-class WebServiceError(Exception):
+class WebServiceError(urllib.error.URLError,TimeoutError):
     pass
 def download_tle(url):
     try:
         with urllib.request.urlopen(url,timeout=10) as response:
             return response.read().decode('utf-8')
-    except urllib.error.URLError as e:
+    except (urllib.error.URLError,TimeoutError) as e:
         raise WebServiceError("无法从指定URL获取TLE数据") from e
-
+    
+    
 def plot_ground_track(lon,lat,satellite,path,fps=10):
-    plt.rcParams["font.sans-serif"] = ["Microsoft YaHei"]
-    plt.rcParams["axes.unicode_minus"] = False
     fig,ax = plt.subplots(
         figsize=(8,4),
         dpi=100,
@@ -87,7 +100,7 @@ def plot_ground_track(lon,lat,satellite,path,fps=10):
     lons[1:][dif]=np.nan
 
     
-    ax.plot(lon,lat,transform=ccrs.PlateCarree())
+    ax.plot(lons,lat,transform=ccrs.PlateCarree())
     点,= ax.plot([],[],"o",transform=ccrs.PlateCarree())
 
 
@@ -120,13 +133,21 @@ def para_calc(tletxt:str,start=None,step_s=30,count=180):
     return lon,lat,height,span    
     
 def main():
-    #给argparse预留
-    #url先用iss的，一会加入arg再改为可输入
-    url="https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE"
-    tle_str=download_tle(url)
-    tlePara=extract_tle(tle_str)
-    lon,lat,height,span=para_calc(tle_str,start=tlePara.epoch,step_s=30,count=180)
-    plot_ground_track(lon,lat,TlePara.name,"out.gif",fps=10)
+    try:
+        parser=build_parser()
+        args=parser.parse_args()
+        if args.cmd is None:
+            parser.print_help()
+            sys.exit(3)
+        if args.cmd=="draw":
+            url=args.url
+            tle_str=download_tle(url)
+            tlePara=extract_tle(tle_str)
+            lon,lat,height,span=para_calc(tle_str,start=tlePara.epoch,step_s=30,count=180)
+            plot_ground_track(lon,lat,tlePara.name,"out.gif",fps=10)
+        print(f"{tlePara.name}:{"out.gif"}")
+    except (TleFormatError, WebServiceError) as e:
+        die(str(e))
 
 if __name__=="__main__":
     main()
