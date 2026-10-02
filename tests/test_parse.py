@@ -1,6 +1,6 @@
 import pytest
 from main import extract_tle, TleFormatError,download_tle, WebServiceError
-from datetime import datetime
+from datetime import datetime,timezone
 import urllib.error
 
 SAMPLE_TLE_ISS="""ISS (ZARYA)   
@@ -40,7 +40,7 @@ def test_eccentricity(sample_data):
     assert sample_data.eccentricity==0.0007005
 
 def test_epoch(sample_data):
-    assert sample_data.epoch==datetime(2026, 9, 30, 20, 27, 19, 351584)
+    assert sample_data.epoch==datetime(2026, 9, 30, 20, 27, 19, 351584,tzinfo=timezone.utc)
 
 @pytest.mark.parametrize(
     "TLE_format_get",

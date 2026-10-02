@@ -51,8 +51,7 @@ python main.py draw https://网站
   - argparse检验异常=2
   
 ## 画图层
-- 模块名 drawplot.py
-- 函数名 tle_draw
+- 函数名 plot_ground_track
 - 返回gif,返回路径给os.path.exist
 - 只向其中输入画图参数与卫星名
 - 检验项目
@@ -62,6 +61,21 @@ python main.py draw https://网站
       -  PIL检测
 - tmp_path将测试产生文件放入独立目录
   
+## 计算函数
+- 默认iss
+- 函数名para_calc
+- download将三行传递给extract，extract再传递给calc
+- 为什么不能读TlePara?
+- 时间用datetime表示
+- 步长t按design
+- 返回lon lat height
+- time zone UTC
+- 时间返回原始数组
+- 验收
+  1. 高度自洽
+  2. 纬度在倾角内
+  3. 官方示例对照
+
 
 ## 工具
 ### 从网页调取数据
@@ -81,7 +95,7 @@ matplotlib
 3. 是否用对库
   - 距离epoch24h内相对skyfield官方示例数值误差<=10km
 4. 计算是否精确
-   - 与Heavens-Above的误差(用大圆距离)<2度
+   - 与Heavens-Above的误差(用大圆距离)<0.5度
 5. 画图过程准确度
   - 步长30秒，10fps，180帧，18秒播完
 

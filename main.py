@@ -1,15 +1,14 @@
 import argparse
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,timezone
 import urllib.request
 import urllib.error
 import matplotlib.pyplot as plt
 import numpy as np
 import cartopy.crs as ccrs
 from matplotlib.animation import FuncAnimation,PillowWriter
-plt.rcParams["font.sans-serif"] = ["Microsoft YaHei"]
-plt.rcParams["axes.unicode_minus"] = False
+from skyfield.api import EarthSatellite, load, wgs84
 
 
 TLE_WRONG_FORMAT_ERROR="所给内容不是TLE参数，应为三行固定宽度文本"
@@ -41,6 +40,7 @@ def extract_tle(tle_str:str)->TlePara:
         else:
             epoch_year+=1900
         epoch=datetime(int(epoch_year),1,1)+timedelta(days=(epoch_day)-1)
+        epoch=epoch.replace(tzinfo=timezone.utc)
         inclination=float(lines[2][8:16].strip())
         raan=float(lines[2][17:25].strip())
         eccentricity=float("0."+lines[2][26:33].strip())
@@ -70,7 +70,8 @@ def download_tle(url):
         raise WebServiceError("无法从指定URL获取TLE数据") from e
 
 def plot_ground_track(lon,lat,satellite,path,fps=10):
-    
+    plt.rcParams["font.sans-serif"] = ["Microsoft YaHei"]
+    plt.rcParams["axes.unicode_minus"] = False
     fig,ax = plt.subplots(
         figsize=(8,4),
         dpi=100,
@@ -81,6 +82,9 @@ def plot_ground_track(lon,lat,satellite,path,fps=10):
     gl.top_labels=False
     gl.right_labels=False
     ax.set_title(f"{satellite} TLE 2 GIF")
+    lons=lon.copy()
+    dif=np.abs(np.diff(lons))>180
+    lons[1:][dif]=np.nan
 
     
     ax.plot(lon,lat,transform=ccrs.PlateCarree())
@@ -95,4 +99,34 @@ def plot_ground_track(lon,lat,satellite,path,fps=10):
     anim.save(path,writer=PillowWriter(fps=fps))
     plt.close(fig)
 
+def para_calc(tletxt:str,start=None,step_s=30,count=180):
+    lines=tletxt.splitlines()
+    name=lines[0].strip()
+    line1=lines[1]
+    line2=lines[2]
 
+    ts = load.timescale(builtin=True)
+    sat =EarthSatellite(line1,line2,name,ts)
+    if start is None:
+        start =sat.epoch.utc_datetime()
+    t = ts.from_datetime(start)+np.arange(count)*step_s/86400
+    dts=t.utc_datetime()
+    sub =wgs84.subpoint(sat.at(t))
+    span=(dts[-1]-dts[0]).total_seconds()
+    
+    lat=sub.latitude.degrees
+    lon=sub.longitude.degrees
+    height=sub.elevation.km
+    return lon,lat,height,span    
+    
+def main():
+    #给argparse预留
+    #url先用iss的，一会加入arg再改为可输入
+    url="https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE"
+    tle_str=download_tle(url)
+    tlePara=extract_tle(tle_str)
+    lon,lat,height,span=para_calc(tle_str,start=tlePara.epoch,step_s=30,count=180)
+    plot_ground_track(lon,lat,TlePara.name,"out.gif",fps=10)
+
+if __name__=="__main__":
+    main()
