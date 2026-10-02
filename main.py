@@ -1,9 +1,11 @@
 import argparse
 import sys
 from dataclasses import dataclass
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
+import urllib.request
 
-TLE_wrong_format_error="所给内容不是TLE参数，应为三行固定宽度文本"
+TLE_WRONG_FORMAT_ERROR="所给内容不是TLE参数，应为三行固定宽度文本"
+
 @dataclass
 class TlePara:
     name:str
@@ -21,7 +23,7 @@ class TleFormatError(Exception):
 def extract_tle(tle_str:str)->TlePara:
     lines=tle_str.splitlines()
     if (len(lines)!=3)or(not lines[1].startswith("1"))or(not lines[2].startswith("2")):
-        raise TleFormatError(TLE_wrong_format_error)
+        raise TleFormatError(TLE_WRONG_FORMAT_ERROR)
     try:
         name=lines[0].strip()
         epoch_year=float(lines[1][18:20].strip())
@@ -46,6 +48,15 @@ def extract_tle(tle_str:str)->TlePara:
             arg_perigee=arg_perigee,
             mean_anomaly=mean_anomaly,
             mean_motion=mean_motion
-            )
+        )
     except (IndexError, ValueError) as e:
-        raise TleFormatError(TLE_wrong_format_error)from e
+        raise TleFormatError(TLE_WRONG_FORMAT_ERROR)from e
+
+class WebServiceError(Exception):
+    pass
+def download_tle(url):
+    try:
+        response = urllib.request.urlopen(url,timeout=10)
+        return response.read().decode('utf-8')
+    except urllib.error.URLError as e:
+        raise WebServiceError("无法从指定URL获取TLE数据") from e

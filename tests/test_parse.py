@@ -1,6 +1,7 @@
 import pytest
-from main import extract_tle, TleFormatError
+from main import extract_tle, TleFormatError,download_tle, WebServiceError
 from datetime import datetime
+import urllib.error
 
 SAMPLE_TLE_ISS="""ISS (ZARYA)   
 1 25544U 98067A   26273.85230731  .00003748  00000+0  76931-4 0  9990
@@ -40,7 +41,7 @@ def test_eccentricity(sample_data):
 
 def test_epoch(sample_data):
     assert sample_data.epoch==datetime(2026, 9, 30, 20, 27, 19, 351584)
-    
+
 @pytest.mark.parametrize(
     "TLE_format_get",
     [SAMPLE_TLE_GARBAGE, SAMPLE_TLE_EMPTY, SAMPLE_TLE_ONELINE, 
@@ -49,3 +50,16 @@ def test_epoch(sample_data):
 def test_TleFormatError(TLE_format_get):
     with pytest.raises(TleFormatError):
         extract_tle(TLE_format_get)
+
+def test_web_yes(monkeypatch):
+    class MockResponse():
+        def read(self):
+            return SAMPLE_TLE_ISS.encode('utf-8')
+    monkeypatch.setattr("main.urllib.request.urlopen",lambda *args, **kwargs,: MockResponse())
+    assert download_tle("https://fakeone.com")==SAMPLE_TLE_ISS
+def test_web_network_error(monkeypatch):
+    def FailMockResponse(*args,**kwargs):
+        raise urllib.error.URLError("网络连接失败")
+    monkeypatch.setattr("main.urllib.request.urlopen", FailMockResponse)
+    with pytest.raises(WebServiceError):
+        download_tle("https://fakeone.com")
