@@ -4,6 +4,13 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import urllib.request
 import urllib.error
+import matplotlib.pyplot as plt
+import numpy as np
+import cartopy.crs as ccrs
+from matplotlib.animation import FuncAnimation,PillowWriter
+plt.rcParams["font.sans-serif"] = ["Microsoft YaHei"]
+plt.rcParams["axes.unicode_minus"] = False
+
 
 TLE_WRONG_FORMAT_ERROR="所给内容不是TLE参数，应为三行固定宽度文本"
 
@@ -61,3 +68,31 @@ def download_tle(url):
             return response.read().decode('utf-8')
     except urllib.error.URLError as e:
         raise WebServiceError("无法从指定URL获取TLE数据") from e
+
+def plot_ground_track(lon,lat,satellite,path,fps=10):
+    
+    fig,ax = plt.subplots(
+        figsize=(8,4),
+        dpi=100,
+        subplot_kw={"projection":ccrs.PlateCarree()})
+    ax.coastlines()
+    ax.set_extent([-180,180,-90,90],crs=ccrs.PlateCarree())
+    gl=ax.gridlines(draw_labels=True)
+    gl.top_labels=False
+    gl.right_labels=False
+    ax.set_title(f"{satellite} TLE 2 GIF")
+
+    
+    ax.plot(lon,lat,transform=ccrs.PlateCarree())
+    点,= ax.plot([],[],"o",transform=ccrs.PlateCarree())
+
+
+    def update(i):
+        点.set_data([lon[i]],[lat[i]])
+        return (点,)
+
+    anim = FuncAnimation(fig,update,frames=len(lon),)
+    anim.save(path,writer=PillowWriter(fps=fps))
+    plt.close(fig)
+
+
