@@ -61,7 +61,11 @@ python main.py --debug draw <网址>
 ## 注意事项
  1. 图像起始时间为 epoch 所示，图像随时间推移误差增大
  2. 星下点纬度为大地纬度
+ 3. cartopy 在绘制含 NaN（用于断线）的轨迹时，
+会报RuntimeWarning: invalid value encountered in linestrings。
+已知无害（图形正常、退出码 0），不处理。
    
 ## 数据来源
 CelesTrak，Skyfield,cartopy
 &&THX for DSH&&
+
