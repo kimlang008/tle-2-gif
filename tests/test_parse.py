@@ -20,6 +20,7 @@ SAMPLE_TLE_UNIQUE="""<html>A
 1
 2</html>"""
 
+
 @pytest.fixture
 def sample_data():
     return extract_tle(SAMPLE_TLE_ISS)
@@ -74,3 +75,4 @@ def test_timeout(monkeypatch):
     monkeypatch.setattr("main.urllib.request.urlopen",fake_timeout)
     with pytest.raises(WebServiceError):
         download_tle("https://fakeone.com")
+

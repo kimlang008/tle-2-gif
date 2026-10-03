@@ -74,14 +74,14 @@ def extract_tle(tle_str:str)->TlePara:
     except (IndexError, ValueError) as e:
         raise TleFormatError(TLE_WRONG_FORMAT_ERROR)from e
 
-class WebServiceError(urllib.error.URLError,TimeoutError):
+class WebServiceError(Exception):
     pass
 def download_tle(url):
     try:
         with urllib.request.urlopen(url,timeout=10) as response:
             return response.read().decode('utf-8')
     except (urllib.error.URLError,TimeoutError) as e:
-        raise WebServiceError("无法从指定URL获取TLE数据") from e
+        raise WebServiceError("网络异常，无法获取TLE数据") from e
     
     
 def plot_ground_track(lon,lat,satellite,path,fps=10):
@@ -145,7 +145,11 @@ def main():
             tlePara=extract_tle(tle_str)
             lon,lat,height,span=para_calc(tle_str,start=tlePara.epoch,step_s=30,count=180)
             plot_ground_track(lon,lat,tlePara.name,"out.gif",fps=10)
-        print(f"{tlePara.name}:{"out.gif"}")
+            print(f"{tlePara.name}:{"out.gif"}")
+        if args.debug:
+            print(f"name:{tlePara.name}\nepoch:{tlePara.epoch}\ninclination:{tlePara.inclination}\nraan:{tlePara.raan}")
+            print(f"eccentricity:{tlePara.eccentricity}\narg_prtigee:{tlePara.arg_perigee}")
+            print(f"mean_anomaly:{tlePara.mean_anomaly}\nmean_motion:{tlePara.mean_motion}")
     except (TleFormatError, WebServiceError) as e:
         die(str(e))
 
