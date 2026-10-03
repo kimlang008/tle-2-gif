@@ -50,3 +50,22 @@ def test_fail_web(monkeypatch,capsys):
     assert e.value.code==3
     err=capsys.readouterr().err
     assert "网络"in err
+
+def test_debug_on(monkeypatch,capsys):
+    monkeypatch.setattr("main.plot_ground_track", lambda *a, **k: None)
+    monkeypatch.setattr("main.download_tle", lambda url: SAMPLE_TEST)
+    monkeypatch.setattr(sys,"argv",["main.py","--debug","draw",
+            "https://test_address"])
+    main()
+    out=capsys.readouterr().out
+    assert "inclination" in out
+
+def test_debug_close(monkeypatch,capsys):
+    monkeypatch.setattr("main.plot_ground_track", lambda *a, **k: None)
+    monkeypatch.setattr("main.download_tle", lambda url: SAMPLE_TEST)
+    monkeypatch.setattr(sys,"argv",["main.py","draw",
+            "https://test_address"])
+    main()
+    out=capsys.readouterr().out
+    assert "inclination" not in out
+        

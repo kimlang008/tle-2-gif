@@ -146,10 +146,11 @@ def main():
             lon,lat,height,span=para_calc(tle_str,start=tlePara.epoch,step_s=30,count=180)
             plot_ground_track(lon,lat,tlePara.name,"out.gif",fps=10)
             print(f"{tlePara.name}:{"out.gif"}")
-        if args.debug:
-            print(f"name:{tlePara.name}\nepoch:{tlePara.epoch}\ninclination:{tlePara.inclination}\nraan:{tlePara.raan}")
-            print(f"eccentricity:{tlePara.eccentricity}\narg_prtigee:{tlePara.arg_perigee}")
-            print(f"mean_anomaly:{tlePara.mean_anomaly}\nmean_motion:{tlePara.mean_motion}")
+            if args.debug:
+                print(f"name:{tlePara.name}\nepoch:{tlePara.epoch}\ninclination:{tlePara.inclination}\nraan:{tlePara.raan}")
+                print(f"eccentricity:{tlePara.eccentricity}\narg_perigee:{tlePara.arg_perigee}")
+                print(f"mean_anomaly:{tlePara.mean_anomaly}\nmean_motion:{tlePara.mean_motion}")
+                print(f"\n经度数组{lon}\n\n纬度数组{lat}\n\n高度{height}\n\n时间跨度{span}")
     except (TleFormatError, WebServiceError) as e:
         die(str(e))
 
